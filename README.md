@@ -1,2 +1,2 @@
 # AI-project-ARR
-AI Project
+Cool AI Project
