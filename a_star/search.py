@@ -23,6 +23,10 @@ def heuristic(state):
     total_value = 0.0
     remaining_capacity = state.capacity
     
+    if state.current_item is not None:
+        total_value += state.current_item.value
+        remaining_capacity -= state.current_item.weight
+
     for item in state.items_left:
         if remaining_capacity == 0:
             break

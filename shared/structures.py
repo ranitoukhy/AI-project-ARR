@@ -47,9 +47,7 @@ class KnapsackProblem:
         num_items, capacity = lines[0].split()
         self.num_items = int(num_items)
         self.capacity = float(capacity)
-        # print(num_items)
         for index, line in enumerate(lines[1:]):
-            # print(index)
             if index == self.num_items:
                 break
             value, weight = map(float, line.split())
@@ -83,28 +81,6 @@ class KnapsackProblem:
             items_left = state.items_left[1:]
         )
         return set([taken, not_taken])
-
-        # successors = set()
-        # for item in state.items_left:
-        #     # Add item to items taken, remove over-capacity items
-        #     new_state_value = state.value + item.value
-        #     new_state_capacity = state.capacity - item.weight
-        #     new_state_items_taken = state.items_taken.union({item})
-
-        #     new_state_items_left = [
-        #         item_left for item_left in state.items_left
-        #         if item_left.index != item.index
-        #         and item_left.weight <= new_state_capacity
-        #     ]
-            
-        #     new_state = State(
-        #         new_state_value,
-        #         new_state_capacity,
-        #         new_state_items_taken,
-        #         new_state_items_left
-        #     )
-        #     successors.add(new_state)
-        # return successors
 
     def __str__(self):
         string = ""

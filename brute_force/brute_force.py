@@ -1,7 +1,7 @@
 import os
 import sys
 import argparse
-import time
+from datetime import datetime
 from itertools import combinations
 from shared.structures import KnapsackProblem
 
@@ -21,7 +21,6 @@ def knapsack_brute_force(problem):
                 max_value = total_value
                 solution = set(combination)
     
-    print(it)
     return max_value, solution
 
 def main(args):
@@ -32,15 +31,17 @@ def main(args):
     print("")
 
     if args.time:
-        t0 = time.time()
+        t0 = datetime.now()
     max_value, solution = knapsack_brute_force(problem)
     if args.time:
-        t1 = time.time()
+        t1 = datetime.now()
     
     print(f"Value found: {max_value}. Solution: {sorted(solution, key=lambda item: item.index)}")
     print("")
 
     if args.time:
+        timediff = t1-t0
+        timediff_milliseconds = ((timediff.seconds * 1000000) + timediff.microseconds) / 1000.0
         print(f"Time: {t1-t0:0.4f} seconds.")
         print("")
     
