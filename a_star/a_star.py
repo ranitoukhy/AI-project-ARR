@@ -3,7 +3,8 @@ import sys
 import argparse
 from datetime import datetime
 from shared.structures import KnapsackProblem
-from search import PriorityQueue, priority_func
+from a_star.search import PriorityQueue, priority_func
+from shared.utils import milliseconds
 
 def a_star_search(problem):
     fringe = PriorityQueue(priority_func)
@@ -37,9 +38,8 @@ def main(args):
     print("")
 
     if args.time:
-        timediff = t1-t0
-        timediff_milliseconds = ((timediff.seconds * 1000000) + timediff.microseconds) / 1000.0
-        print(f"Time: {timediff_milliseconds:0.2f} milliseconds.")
+        timediff_ms = milliseconds(t1-t0)
+        print(f"Time: {timediff_ms:0.2f} milliseconds.")
         print("")
     
     return max_value

@@ -6,13 +6,11 @@ from datetime import datetime
 from a_star.a_star import a_star_search
 from brute_force.brute_force import brute_force
 from shared.structures import KnapsackProblem
+from shared.utils import milliseconds
 
 n_iters = 100
 headers = ['Problem', 'Brute Force', 'A*'] #, 'Genetic']
 err_margin = 0.0001
-
-def milliseconds(timediff):
-    return ((timediff.seconds * 1000000) + timediff.microseconds) / 1000.0
 
 def main(args):
     results = []
@@ -29,7 +27,7 @@ def main(args):
             t0 = datetime.now()
             value, solution = brute_force(problem)
             t1 = datetime.now()
-            brute_force_time += milliseconds(t1 - t0)
+            brute_force_time += milliseconds(t1-t0)
         brute_force_time /= n_iters
 
         if args.optimal is not None and abs(value - optimal) > err_margin:
@@ -42,7 +40,7 @@ def main(args):
             t0 = datetime.now()
             value, solution = a_star_search(problem)
             t1 = datetime.now()
-            a_star_time += milliseconds(t1 - t0)
+            a_star_time += milliseconds(t1-t0)
         a_star_time /= n_iters
 
         if args.optimal is not None and abs(value - optimal) > err_margin:

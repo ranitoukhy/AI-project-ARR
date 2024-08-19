@@ -4,16 +4,15 @@ import argparse
 from datetime import datetime
 from itertools import combinations
 from shared.structures import KnapsackProblem
+from shared.utils import milliseconds
 
 def brute_force(problem):
     solution = set()
     max_value = 0
     
-    it = 0
     # Check all possible combinations of items
     for r in range(1, problem.num_items+1):
         for combination in combinations(problem.items, r):
-            it += 1
             total_weight = sum(item.weight for item in combination)
             total_value = sum(item.value for item in combination)
             
@@ -40,8 +39,7 @@ def main(args):
     print("")
 
     if args.time:
-        timediff = t1-t0
-        timediff_milliseconds = ((timediff.seconds * 1000000) + timediff.microseconds) / 1000.0
+        timediff_ms = milliseconds(t1-t0)
         print(f"Time: {t1-t0:0.4f} seconds.")
         print("")
     
