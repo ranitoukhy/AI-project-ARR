@@ -17,18 +17,9 @@ class State:
         self.current_item = current_item
         self.items_taken = items_taken
         self.items_left = items_left
-
-    def __key(self):
-        return (self.current_item, self.items_taken)
     
     def __lt__(self, _):
         return True
-    
-    def __hash__(self):
-        return hash(self.__key())
-    
-    def __eq__(self, other):
-        return self.__key() == other.__key()
 
     def __str__(self):
         return f"\n<STATE> Total value: {self.value}, Capacity: {self.capacity}," + \
