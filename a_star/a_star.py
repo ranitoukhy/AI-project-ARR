@@ -2,9 +2,23 @@ import os
 import sys
 import argparse
 from datetime import datetime
-import cProfile
 from shared.structures import KnapsackProblem
-from search import a_star_search
+from search import PriorityQueue, priority_func
+
+def a_star_search(problem):
+    fringe = PriorityQueue(priority_func)
+    fringe.push(problem.get_start_state())
+    visited_states = set()
+    while not fringe.isEmpty():
+        state = fringe.pop()
+        if problem.is_goal_state(state):
+            return state.value, state.items_taken
+        if state in visited_states:
+            continue
+        visited_states.add(state)
+        for successor in problem.get_successors(state):
+            if successor not in visited_states:
+                fringe.push(successor)
 
 def main(args):
     problem = KnapsackProblem(args.input)

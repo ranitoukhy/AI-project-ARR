@@ -5,7 +5,7 @@ from datetime import datetime
 from itertools import combinations
 from shared.structures import KnapsackProblem
 
-def knapsack_brute_force(problem):
+def brute_force(problem):
     solution = set()
     max_value = 0
     
@@ -32,7 +32,7 @@ def main(args):
 
     if args.time:
         t0 = datetime.now()
-    max_value, solution = knapsack_brute_force(problem)
+    max_value, solution = brute_force(problem)
     if args.time:
         t1 = datetime.now()
     
