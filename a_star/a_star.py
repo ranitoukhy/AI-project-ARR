@@ -49,6 +49,6 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.input):
         print(f"Path not found: {args.input}")
-        sys.exit(1)
+        sys.exit(-1)
     
     sys.exit(main(args))

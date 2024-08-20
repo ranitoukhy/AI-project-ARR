@@ -2,36 +2,42 @@ import os
 import sys
 import argparse
 from datetime import datetime
-from itertools import combinations
+import scipy.optimize as opt
 from shared.structures import KnapsackProblem
 from shared.utils import milliseconds
 
-def brute_force(problem):
-    solution = set()
-    max_value = 0
+def linear_programming(problem):
+    values = [item.value for item in problem.items]
+    weights = [item.weight for item in problem.items]
     
-    # Check all possible combinations of items
-    for r in range(1, problem.num_items+1):
-        for combination in combinations(problem.items, r):
-            total_weight = sum(item.weight for item in combination)
-            total_value = sum(item.value for item in combination)
-            
-            if total_weight <= problem.capacity and total_value > max_value:
-                max_value = total_value
-                solution = set(combination)
+    c = [(-1) * value for value in values]
+    integrality = [1] * problem.num_items
+    bounds = opt.Bounds(0, 1)
+    constraints = opt.LinearConstraint(weights, 0, problem.capacity)
+
+    result = opt.milp(c, integrality=integrality, bounds=bounds, constraints=constraints)
+    if not result.success:
+        print(f"Linear programming solver failed with status %d", result.status)
+        if result.status == 4:
+            print(result.message)
+        sys.exit(-1)
     
+    max_value = (-1) * result.fun
+    solution = set([problem.items[i] for i in range(problem.num_items) if result.x[i] == 1])
+
     return max_value, solution
+
 
 def main(args):
     problem = KnapsackProblem(args.input)
-    print("Starting a brute force search for finding the optimal solution to the Knapsack problem.")
+    print("Starting a Linear programming solver for finding a solution to the Knapsack problem.")
     print("")
     print(f"Problem: {problem}")
     print("")
 
     if args.time:
         t0 = datetime.now()
-    max_value, solution = brute_force(problem)
+    max_value, solution = linear_programming(problem)
     if args.time:
         t1 = datetime.now()
     
@@ -40,7 +46,7 @@ def main(args):
 
     if args.time:
         timediff_ms = milliseconds(t1-t0)
-        print(f"Time: {t1-t0:0.4f} seconds.")
+        print(f"Time: {timediff_ms:0.2f} milliseconds.")
         print("")
     
     return max_value
