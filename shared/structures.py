@@ -29,23 +29,28 @@ class State:
     def __repr__(self):
         return self.__str__()
 
+def parse_input(filepath):
+    items = []
+    with open(filepath, 'r') as f:
+        lines = f.readlines()
+
+    num_items, capacity = lines[0].split()
+    num_items = int(num_items)
+    capacity = float(capacity)
+    for index, line in enumerate(lines[1:]):
+        if index == num_items:
+            break
+        value, weight = map(float, line.split())
+        if weight > capacity:
+            continue
+        items.append(KnapsackItem(index + 1, value, weight))
+    items = sorted(items, key=lambda item: item.value / item.weight, reverse=True)
+    return num_items, capacity, items
+
+
 class KnapsackProblem:
     def __init__(self, filepath):
-        self.items = []
-        with open(filepath, 'r') as f:
-            lines = f.readlines()
-        
-        num_items, capacity = lines[0].split()
-        self.num_items = int(num_items)
-        self.capacity = float(capacity)
-        for index, line in enumerate(lines[1:]):
-            if index == self.num_items:
-                break
-            value, weight = map(float, line.split())
-            if weight > self.capacity:
-                continue
-            self.items.append(KnapsackItem(index+1, value, weight))
-        self.items = sorted(self.items, key=lambda item: item.value / item.weight, reverse=True)
+        self.num_items, self.capacity, self.items = parse_input(filepath)
     
     def get_start_state(self):
         start_state = State(0, self.capacity, self.items[0], frozenset(), self.items[1:])

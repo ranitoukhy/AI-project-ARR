@@ -7,12 +7,13 @@ from datetime import datetime
 from brute_force.brute_force import brute_force
 from linear.linear import linear_programming
 from a_star.a_star import a_star_search
+from genetic.genetic import genetic_search
 
 from shared.structures import KnapsackProblem
 from shared.utils import milliseconds
 
 n_iters = 100
-headers = ['Problem', 'Brute Force', 'Linear Programming', 'A* Search'] #, 'Genetic']
+headers = ['Problem', 'Brute Force', 'Linear Programming', 'A* Search', 'Genetic']
 err_margin = 0.0001
 
 def main(args):
@@ -62,6 +63,13 @@ def main(args):
             sys.exit(-1)
         
         # Genetic - TODO
+        genetic_time = 0.0
+        for _ in range(n_iters):
+            t0 = datetime.now()
+            value = genetic_search(os.path.join(args.input, filename))
+            t1 = datetime.now()
+            genetic_time += milliseconds(t1 - t0)
+        genetic_time /= n_iters
 
         results.append([filename, brute_force_time, linear_time, a_star_time])
     print("")
