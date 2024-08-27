@@ -62,16 +62,15 @@ def main(args):
             print(f"Brute force found sub-optimal solution {value}. Optimal is {optimal}.")
             sys.exit(-1)
         
-        # Genetic - TODO
         genetic_time = 0.0
         for _ in range(n_iters):
             t0 = datetime.now()
-            value = genetic_search(os.path.join(args.input, filename))
+            value, _ = genetic_search(os.path.join(args.input, filename))
             t1 = datetime.now()
             genetic_time += milliseconds(t1 - t0)
         genetic_time /= n_iters
 
-        results.append([filename, brute_force_time, linear_time, a_star_time])
+        results.append([filename, brute_force_time, linear_time, a_star_time, genetic_time])
     print("")
     print(tabulate(results, headers=headers))
 
