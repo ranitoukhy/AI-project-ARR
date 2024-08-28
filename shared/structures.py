@@ -85,3 +85,28 @@ class KnapsackProblem:
         for item in sorted(self.items, key=lambda item: item.index):
             string += str(item)
         return string
+
+class KnapsackSolution:
+    def __init__(self, solution_str, score):
+        self.solution_str = solution_str
+        self.score = score
+
+    def __str__(self):
+        return f"Solution = {self.solution_str}, Score = {self.score}"
+
+    def __lt__(self, other):
+        return self.score < other.score
+#
+# class ElitesList:
+#
+#     def __init__(self, capacity):
+#         self.capacity = capacity
+#         self.size = 0
+#         self.elements = []
+#
+#     def insert(self, element):
+#         if self.size == self.capacity and element < self.elements[]:
+#
+#
+#     def __insert_inner(self, element):
+#         pass
