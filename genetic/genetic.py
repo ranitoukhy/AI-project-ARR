@@ -55,9 +55,10 @@ class GeneticAlgorithmAgent:
                  elitism_fraction,
                  cross_prob,
                  mutation_prob,
-                 inner_mutation_prob):
+                 inner_mutation_prob,
+                 start_item_count=1):
 
-        random.seed(0)
+        #random.seed(0)
 
         self.problem: KnapsackGeneticProblem = problem
         self.population_size = population_size & ~1
@@ -65,15 +66,24 @@ class GeneticAlgorithmAgent:
         self.cross_prob = cross_prob
         self.inner_mutation_prob = inner_mutation_prob
         self.mutation_prob = mutation_prob
+        self.start_item_count = start_item_count
         self.elites_size = int(self.population_size * elitism_fraction) & ~1
         self.elites_heap = []
         self.population : List[KnapsackSolution] = self.generate_first_population()
 
-    def generate_first_population(self):
+    def generate_first_population(self, valid_solutions=False):
         pop = set()
+
+        max_iter = 10*self.population_size
+        i = 0
         while len(pop) < self.population_size:
-            solution_str = ''.join(random.choice('0' * (self.problem.num_items - 1) + '1') for _ in range(self.problem.num_items))
-            pop.add(solution_str)
+            solution_str = ''.join(random.choice('0'*(self.problem.num_items - self.start_item_count) + '1'*self.start_item_count) for _ in range(self.problem.num_items))
+            if valid_solutions and i < max_iter:
+                if self.problem.score_for_solution_str(solution_str) > 0:
+                    pop.add(solution_str)
+                i += 1
+            else:
+                pop.add(solution_str)
 
         return [KnapsackSolution(solution_str, self.problem.score_for_solution_str(solution_str)) for solution_str in pop]
 
@@ -154,7 +164,6 @@ class GeneticAlgorithmAgent:
 
     def generate_next_populations(self):
         elites = self.get_elites()
-        print(f"best elite, score = {elites[0].solution_str, elites[0].score}")
         crossovers = self.get_crossovers()
         mutations = self.mutate_solutions(crossovers)
         self.population = elites + mutations
@@ -165,7 +174,6 @@ class GeneticAlgorithmAgent:
             # print statistics
 
             max_sol = max(self.population)
-            print(f"iteration {i}: solution value = {max_sol.score}")
 
         max_sol = max(self.population)
 
@@ -179,13 +187,13 @@ def genetic_search(filepath):
     #     population_size = 2 ** (len(problem) - 2)
     # else:
     #     population_size = 2 ** (len(problem) - 3)
-    population_size = 1000
+    population_size = 500
     agent = GeneticAlgorithmAgent(
         problem=problem,
         population_size=population_size,
         number_iterations=100,
-        elitism_fraction=0.05,
-        cross_prob=0.7,
+        elitism_fraction=0.1,
+        cross_prob=0.4,
         mutation_prob=0.5,
         inner_mutation_prob=1 / len(problem)
     )
