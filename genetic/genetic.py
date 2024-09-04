@@ -55,36 +55,21 @@ class GeneticAlgorithmAgent:
                  elitism_fraction,
                  cross_prob,
                  mutation_prob,
-                 inner_mutation_prob,
-                 start_item_count=1):
-
-        #random.seed(0)
+                 inner_mutation_prob):
 
         self.problem: KnapsackGeneticProblem = problem
-        self.population_size = population_size & ~1
-        self.number_iterations = number_iterations
+        self.population_size = 2*len(problem)
+        self.number_iterations = len(problem)
         self.cross_prob = cross_prob
-        self.inner_mutation_prob = inner_mutation_prob
-        self.mutation_prob = mutation_prob
-        self.start_item_count = start_item_count
+        self.mutation_prob = 1
+        self.inner_mutation_prob = 1 / len(problem)
         self.elites_size = int(self.population_size * elitism_fraction) & ~1
         self.elites_heap = []
         self.population : List[KnapsackSolution] = self.generate_first_population()
 
     def generate_first_population(self, valid_solutions=False):
-        pop = set()
-
-        max_iter = 10*self.population_size
-        i = 0
-        while len(pop) < self.population_size:
-            solution_str = ''.join(random.choice('0'*(self.problem.num_items - self.start_item_count) + '1'*self.start_item_count) for _ in range(self.problem.num_items))
-            if valid_solutions and i < max_iter:
-                if self.problem.score_for_solution_str(solution_str) > 0:
-                    pop.add(solution_str)
-                i += 1
-            else:
-                pop.add(solution_str)
-
+        pop = ['0'*i+'1'+'0'*(self.problem.num_items-i-1) for i in range(self.problem.num_items)]
+        pop += pop
         return [KnapsackSolution(solution_str, self.problem.score_for_solution_str(solution_str)) for solution_str in pop]
 
     def tournament(self) -> List[KnapsackSolution]:
@@ -131,15 +116,9 @@ class GeneticAlgorithmAgent:
 
     def mutate_solutions(self, solutions: List[KnapsackSolution]):
         def mutate(solution: KnapsackSolution):
-            for i in range(len(solution.solution_str)):
+            sol_str = solution.solution_str
+            for i in range(len(sol_str)):
                 if random.random() < self.inner_mutation_prob:
-                    # mutation = '1' if solution[i] == '0' else '0'
-                    # if i == 0:
-                    #     solution = mutation + solution[1:]
-                    # elif i == len(solution)-1:
-                    #     solution = solution[:-1] + mutation
-                    # else:
-                    #     solution = solution[:i] + mutation + solution[i+1:]
                     solution.solution_str = bin(int(solution.solution_str, 2) ^ 1 << i)[2:].zfill(self.problem.num_items)
 
             solution.score = self.problem.score_for_solution_str(solution.solution_str)
@@ -147,20 +126,15 @@ class GeneticAlgorithmAgent:
 
         for i in range(len(solutions)):
             sol = solutions[i]
-            if random.random() < self.mutation_prob or sol.score == 0:
-                mutation_iter = 0
-                mutated_sol = mutate(sol)
-                while mutated_sol.score == 0 and mutation_iter < 100:
-                    mutated_sol = mutate(mutated_sol)
-                    mutation_iter += 1
-                solutions[i] = mutated_sol
+
+            mutation_iter = 0
+            mutated_sol = mutate(sol)
+            while (sol.score != 0 and mutated_sol.score == 0) and mutation_iter < 100:
+                mutated_sol = mutate(mutated_sol)
+                mutation_iter += 1
+            solutions[i] = mutated_sol
 
         return solutions
-
-
-    def update_elites_heap(self, new_offspring):
-        if len(self.elites_heap) < self.elites_size:
-            heappush(self.elites_heap, new_offspring)
 
     def generate_next_populations(self):
         elites = self.get_elites()
@@ -171,9 +145,6 @@ class GeneticAlgorithmAgent:
     def run(self):
         for i in range(self.number_iterations):
             self.generate_next_populations()
-            # print statistics
-
-            max_sol = max(self.population)
 
         max_sol = max(self.population)
 
@@ -181,20 +152,14 @@ class GeneticAlgorithmAgent:
 
 def genetic_search(filepath):
     problem = KnapsackGeneticProblem(filepath)
-    # if len(problem) >= 10:
-    #     population_size = 125
-    # elif len(problem) <= 4:
-    #     population_size = 2 ** (len(problem) - 2)
-    # else:
-    #     population_size = 2 ** (len(problem) - 3)
     population_size = 500
     agent = GeneticAlgorithmAgent(
         problem=problem,
-        population_size=population_size,
-        number_iterations=100,
-        elitism_fraction=0.1,
-        cross_prob=0.4,
-        mutation_prob=0.5,
+        population_size=2*problem.num_items,
+        number_iterations=problem.num_items,
+        elitism_fraction=0.35,
+        cross_prob=0.7,
+        mutation_prob=1,
         inner_mutation_prob=1 / len(problem)
     )
 
@@ -209,7 +174,7 @@ def main(args):
     max_value, solution = genetic_search(args.input)
     if args.time:
         t1 = datetime.now()
-    
+
     print(f"Value found: {max_value}. Solution: {sorted(solution, key=lambda item: item.index)}")
     print("")
 
@@ -217,7 +182,7 @@ def main(args):
         timediff_ms = milliseconds(t1-t0)
         print(f"Time: {timediff_ms:0.2f} milliseconds.")
         print("")
-    
+
     return max_value
 
 if __name__ == "__main__":
@@ -225,12 +190,12 @@ if __name__ == "__main__":
 
     parser.add_argument('-i', '--input', required=True, help='Input Knapsack problem file path.')
     parser.add_argument('-t', '--time', action='store_true', help='Time of the run will be printed.')
-    
+
     args = parser.parse_args()
 
     if not os.path.exists(args.input):
         print(f"Path not found: {args.input}")
         sys.exit(-1)
-    
+
     cProfile.run('main(args)')
     # sys.exit(main(args))
