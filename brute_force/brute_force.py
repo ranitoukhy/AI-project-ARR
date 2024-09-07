@@ -7,6 +7,11 @@ from shared.structures import KnapsackProblem
 from shared.utils import milliseconds
 
 def brute_force(problem):
+    """
+    Iterates over all possible combinations of items to find the one with the highest value which satisfies the capacity constraint.
+    :param problem: A KnapsackProblem object
+    :return: The value of the solution found, and the solution itself.
+    """
     solution = set()
     max_value = 0
     

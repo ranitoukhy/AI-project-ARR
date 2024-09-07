@@ -1,4 +1,7 @@
 class KnapsackItem:
+    """
+    An item of the KnapsackProblem.
+    """
     def __init__(self, index, value, weight):
         self.index = index
         self.value = value
@@ -11,6 +14,9 @@ class KnapsackItem:
         return self.__str__()
 
 class State:
+    """
+    A state within the search space of A* search of the KnapsackProblem.
+    """
     def __init__(self, value, capacity, current_item, items_taken, items_left):
         self.value = value
         self.capacity = capacity
@@ -30,6 +36,23 @@ class State:
         return self.__str__()
 
 def parse_input(filepath):
+    """
+    Parses a file with a Knapsack problem encoding into data.
+    An encoding is in the form of:
+        n wmax
+        v1 w1
+        v2 w2
+        : :
+        vi wi
+        : :
+        vn wn
+    Where:
+        1. n is the total number of items
+        2. wmax is the capacity of the Knapsack
+        3. vi, wi are the value and weight of each item
+    :param filepath: A path to a Knapsack problem encoding
+    :return: number of items, capacity of the Knapsack, and a list of KnapsackItems.
+    """
     items = []
     with open(filepath, 'r') as f:
         lines = f.readlines()
@@ -49,17 +72,34 @@ def parse_input(filepath):
 
 
 class KnapsackProblem:
+    """
+    A representation of a Knapsack problem.
+    """
     def __init__(self, filepath):
         self.num_items, self.capacity, self.items = parse_input(filepath)
     
     def get_start_state(self):
+        """
+        :return: A KnapsackState representing the starting state of a search space for the A* search of a goal state.
+        """
         start_state = State(0, self.capacity, self.items[0], frozenset(), self.items[1:])
         return start_state
 
     def is_goal_state(self, state):
+        """
+        :param state: a KnapsackState to check if it is a goal state of a KnapsackProblem, meaning, if there are
+            no more items to add to the Knapsack within the given problem.
+        :return: True if the given state is a goal state, false otherwise.
+        """
         return state.current_item is None
 
     def get_successors(self, state):
+        """
+        :param state: a KnapsackState to find all possible successor states within the search space.
+        :return: a set of two KnapsackStates:
+            1. A state where the state.current_item is taken into the Knapsack.
+            2. A state where the state.current_item is not taken into the Knapsack.
+        """
         taken_successor_capacity = state.capacity - state.current_item.weight
         taken_successor_items_left = [item for item in state.items_left if item.weight <= taken_successor_capacity]
         taken = State(
@@ -87,6 +127,9 @@ class KnapsackProblem:
         return string
 
 class KnapsackSolution:
+    """
+    A solution (an individual) within the population of the Genetic algorithm.
+    """
     def __init__(self, solution_str, score):
         self.solution_str = solution_str
         self.score = score
@@ -96,17 +139,3 @@ class KnapsackSolution:
 
     def __lt__(self, other):
         return self.score < other.score
-#
-# class ElitesList:
-#
-#     def __init__(self, capacity):
-#         self.capacity = capacity
-#         self.size = 0
-#         self.elements = []
-#
-#     def insert(self, element):
-#         if self.size == self.capacity and element < self.elements[]:
-#
-#
-#     def __insert_inner(self, element):
-#         pass

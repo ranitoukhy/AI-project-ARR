@@ -2,6 +2,9 @@ import heapq
 from math import inf
 
 class PriorityQueue:
+    """
+    A Priority Queue for managing the A* search.
+    """
     def __init__(self, priority_function):
         self.heap = []
         self.priority_function = priority_function
@@ -17,9 +20,23 @@ class PriorityQueue:
         return len(self.heap) == 0
 
 def state_cost(state):
+    """
+    Returns the cost of the given KnapsackState.
+    A state's cost is negative the sum of values of the items taken in the state.
+    :param state: The KnapsackState object to calculate the cost of.
+    :return: The cost of the given state.
+    """
     return -state.value
 
 def heuristic(state):
+    """
+    Returns the heuristic value of the given KnapsackState.
+    This value is negative the solution of a Knapsack problem, where:
+        1. The capacity of the Knapsack is the given state's remaining capacity, and
+        2. The items available are the state's items left.
+    :param state: The KnapsackState object to calculate the heuristic value of.
+    :return: The heuristic value of the given state.
+    """
     total_value = 0.0
     remaining_capacity = state.capacity
     
@@ -40,4 +57,10 @@ def heuristic(state):
     return -total_value
 
 def priority_func(state):
+    """
+    The priority function of a state, for managing the state within a PriorityQueue during A* search.
+    It is the addition of the state's cost and the heuristic value of the state.
+    :param state: The state to calculate the priority of.
+    :return: The priority value of the state (the sum of the state's cost and heuristic value).
+    """
     return state_cost(state) + heuristic(state)

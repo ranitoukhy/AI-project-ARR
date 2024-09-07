@@ -7,6 +7,12 @@ from a_star.search import PriorityQueue, priority_func
 from shared.utils import milliseconds
 
 def a_star_search(problem):
+    """
+    Runs the A* search algorithm on a KnapsackProblem object.
+    The algorithm manages a PriorityQueue of KnapsackStates to run an informed BFS based on a priority function per state.
+    :param problem: A KnapsackProblem object
+    :return: The value of the solution found, and the solution itself.
+    """
     fringe = PriorityQueue(priority_func)
     fringe.push(problem.get_start_state())
     while not fringe.isEmpty():

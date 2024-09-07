@@ -7,6 +7,20 @@ from shared.structures import KnapsackProblem
 from shared.utils import milliseconds
 
 def linear_programming(problem):
+    """
+    Runs a Linear Programming solver for maximizing the Knapsack problem as a linear constraint problem:
+        Find a vector x ∈ 𝕫
+        that minimizes c @ x
+        such that 0 <= w @ x <= C
+                  𝟘 <= x <= 𝟙
+    Where:
+        1. x is the 0's and 1's solution vector of items' indices
+        2. c is a vector of negative values per item
+        3. w is a vector of weights per item
+        4. C is the Knapsack's capacity.
+    :param problem: A KnapsackProblem object
+    :return: The value of the solution found, and the solution itself.
+    """
     values = [item.value for item in problem.items]
     weights = [item.weight for item in problem.items]
     

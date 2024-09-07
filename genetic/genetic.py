@@ -1,4 +1,3 @@
-import cProfile
 import random
 import os
 import sys
@@ -66,13 +65,13 @@ class GeneticAlgorithmAgent:
                  expected_items_mutated=1):
         """
         :param problem: A KnapsackGeneticProblem instance
-        :param population_size_factor: the population size will be population_size_factor * len(problem)
-        :param number_iterations_factor: the number of iterations will be number_iterations_factor * len(problem)
-        :param elitism_fraction: the fraction of the generation that should be passed as elites
-        :param cross_prob: the probability of crossing over two parents during the crossover phase
-        :param mutation_prob: the probability of mutating a chromosome during the mutation phase
-        :param inner_mutation_prob: the probability of switching a single item when mutating a chromosome
-        :param expected_items_mutated: alternative way for setting inner mutation probability.
+        :param population_size_factor: The population size will be population_size_factor * len(problem)
+        :param number_iterations_factor: The number of iterations will be number_iterations_factor * len(problem)
+        :param elitism_fraction: The fraction of the generation that should be passed as elites
+        :param cross_prob: The probability of crossing over two parents during the crossover phase
+        :param mutation_prob: The probability of mutating a chromosome during the mutation phase
+        :param inner_mutation_prob: The probability of switching a single item when mutating a chromosome
+        :param expected_items_mutated: Alternative way for setting inner mutation probability.
                         Inner mutation probability will be expected_items_mutated/len(problem)
         """
         self.problem: KnapsackGeneticProblem = problem
@@ -109,7 +108,7 @@ class GeneticAlgorithmAgent:
 
     def get_elites(self):
         """
-        :return: the top elite_size chromosomes of the current population
+        :return: The top elite_size chromosomes of the current population
         """
         self.population.sort(reverse=True)
         return [KnapsackSolution(pop.solution_str, pop.score) for pop in self.population[:self.elites_size]]
@@ -121,14 +120,14 @@ class GeneticAlgorithmAgent:
             1. Selecting the top (population_size - elite_size)/2 chromosomes of the current population as "parents"
             2. Taking pairs of parents and either creating crossovers from them or
                 passing them directly to the next population
-        :return: a list of (population_size - elite_size) KnapsackSolutions
+        :return: A list of (population_size - elite_size) KnapsackSolutions
         """
         def crossover(sol1: str, sol2: str):
             """
             Crosses over two KnapsackSolution items by creating two new KnapsackSolutions that
             consist of the first half of one of the inputted solutions and the second half of the
             second inputted solution
-            :return: two KnapsackSolution "crossover-ed" objects
+            :return: Two KnapsackSolution "crossover-ed" objects
             """
             cutoff = len(sol1) // 2
             res1 = sol1[:cutoff] + sol2[cutoff:]
@@ -153,6 +152,7 @@ class GeneticAlgorithmAgent:
 
     def mutate_solutions(self, solutions: List[KnapsackSolution]):
         """
+        Bit-flips a list of solutions, with probability self.inner_mutation_prob for each bit.
         :param solutions: A list of KnapsackSolutions to mutate
         :return: A list of mutated KnapsackSolutions
         """
@@ -162,7 +162,7 @@ class GeneticAlgorithmAgent:
             inner_mutation_prob flip the decision made regarding said item in the solution
             (take the item if not taken, remove the item if taken)
             :param solution: A KnapsackSolution to mutate
-            :return: the mutation of the given solution
+            :return: The mutation of the given solution
             """
             sol_str = solution.solution_str
             for i in range(len(sol_str)):
@@ -201,6 +201,10 @@ class GeneticAlgorithmAgent:
         self.population = elites + mutations
 
     def run(self):
+        """
+        Runs the Genetic algorithm agent on the problem it was initialized with.
+        :return: The value of the solution found, and the solution itself.
+        """
         for i in range(self.number_iterations):
             self.generate_next_populations()
 
@@ -209,6 +213,11 @@ class GeneticAlgorithmAgent:
         return max_sol.score, self.problem.get_items_from_str(max_sol.solution_str)
 
 def genetic_search(filepath):
+    """
+    Runs the Genetic algorithm on a problem to find a good solution to the Knapsack problem.
+    :param filepath: A path to a Knapsack problem with the format specified in structures.parse_input
+    :return: The value of the solution found, and the solution itself.
+    """
     problem = KnapsackGeneticProblem(filepath)
     agent = GeneticAlgorithmAgent(
         problem=problem,
@@ -255,5 +264,4 @@ if __name__ == "__main__":
         print(f"Path not found: {args.input}")
         sys.exit(-1)
 
-    cProfile.run('main(args)')
-    # sys.exit(main(args))
+    sys.exit(main(args))
