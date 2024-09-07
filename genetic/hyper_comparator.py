@@ -1,7 +1,23 @@
 import sys
 import genetic
+from datetime import datetime
 
-if __name__ == '__main__':
+def milliseconds(timediff):
+    return ((timediff.seconds * 1000000) + timediff.microseconds) / 1000.0
+
+def calc_avg(filepath, num_iter=10):
+    avg_score = 0
+    avg_time = 0
+
+    for i in range(num_iter):
+        t0 = datetime.now()
+        avg_score += genetic.genetic_search(filepath)[0]
+        t1 = datetime.now()
+        avg_time += milliseconds(t1-t0)
+
+    return avg_score / num_iter, avg_time / num_iter
+
+def find_hyper():
     outfile = "C:\\Users\\alonl\\Documents\\GitHub\\AI-final-2\\test.txt"
     # filepath = "C:\\Users\\alonl\\Documents\\GitHub\\AI-final-2\\input\\large_scale\\knapPI_1_1000_1000_1"
     filepath = "C:\\Users\\alonl\\Documents\\GitHub\\AI-final-2\\input\\large_scale\\knapPI_1_100_1000_1"
@@ -50,3 +66,9 @@ if __name__ == '__main__':
         file.write(header_line + '\n')
         for result in results:
             file.write(result + '\n')
+
+
+if __name__ == '__main__':
+    filepath = "C:\\Users\\alonl\\Documents\\GitHub\\AI-final-2\\input\\large_scale\\knapPI_1_100_1000_1"
+    avg_score, avg_time = calc_avg(filepath)
+    print(f"Score: {avg_score}, TIme: {avg_time}")

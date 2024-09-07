@@ -8,12 +8,15 @@ from typing import List
 
 from shared.structures import *
 from shared.utils import milliseconds
-from heapq import *
 
 class KnapsackGeneticProblem:
+    """
+    This class represents the 1-0 knapsack problem with utility functions for
+    the genetic algorithm agent
+    """
     def __init__(self, filepath):
         self.num_items, self.max_weight, self.items = parse_input(filepath)
-
+        self.items_sorted_by_vpw = sorted(list(range(len(self.items))), key=lambda i: self.items[i].value / self.items[i].weight, reverse=True)
 
     def __len__(self):
         return len(self.items)
@@ -45,62 +48,99 @@ class KnapsackGeneticProblem:
         return total_val if total_weight <= self.max_weight else 0.0
 
 
-
 class GeneticAlgorithmAgent:
+    """
+    A genetic-algorithm agent that, given pre-defined parameters, returns a
+    solution for the 0-1 Knapsack Problem create by mutating and crossing over
+    solutions throughout multiple generations
+    """
 
     def __init__(self,
                  problem,
-                 population_size,
-                 number_iterations,
-                 elitism_fraction,
-                 cross_prob,
-                 mutation_prob,
-                 inner_mutation_prob):
-
+                 population_size_factor=2,
+                 number_iterations_factor=1,
+                 elitism_fraction=0.35,
+                 cross_prob=0.7,
+                 mutation_prob=1,
+                 inner_mutation_prob=0.05,
+                 expected_items_mutated=1):
+        """
+        :param problem: A KnapsackGeneticProblem instance
+        :param population_size_factor: the population size will be population_size_factor * len(problem)
+        :param number_iterations_factor: the number of iterations will be number_iterations_factor * len(problem)
+        :param elitism_fraction: the fraction of the generation that should be passed as elites
+        :param cross_prob: the probability of crossing over two parents during the crossover phase
+        :param mutation_prob: the probability of mutating a chromosome during the mutation phase
+        :param inner_mutation_prob: the probability of switching a single item when mutating a chromosome
+        :param expected_items_mutated: alternative way for setting inner mutation probability.
+                        Inner mutation probability will be expected_items_mutated/len(problem)
+        """
         self.problem: KnapsackGeneticProblem = problem
-        self.population_size = 2*len(problem)
-        self.number_iterations = len(problem)
+        self.population_size = population_size_factor*len(problem)
+        self.number_iterations = number_iterations_factor*len(problem)
         self.cross_prob = cross_prob
-        self.mutation_prob = 1
-        self.inner_mutation_prob = 1 / len(problem)
+        self.mutation_prob = mutation_prob
+        self.inner_mutation_prob = inner_mutation_prob \
+            if expected_items_mutated <= 0 \
+            else expected_items_mutated / len(problem)
         self.elites_size = int(self.population_size * elitism_fraction) & ~1
-        self.elites_heap = []
-        self.population : List[KnapsackSolution] = self.generate_first_population()
+        self.population: List[KnapsackSolution] = self.generate_first_population()
 
-    def generate_first_population(self, valid_solutions=False):
-        pop = ['0'*i+'1'+'0'*(self.problem.num_items-i-1) for i in range(self.problem.num_items)]
-        pop += pop
+    def generate_first_population(self):
+        """
+        Generates the first population for the genetic algorithm.
+        The population consists of solutions that are constructed of a single item in the knapsack
+        :return: A list of KnapsackSolution items representing the first population
+        """
+        pop = ['0'*(i%self.problem.num_items)+'1'+'0'*(self.problem.num_items-(i%self.problem.num_items)-1) for i in range(self.population_size)]
         return [KnapsackSolution(solution_str, self.problem.score_for_solution_str(solution_str)) for solution_str in pop]
 
-    def tournament(self) -> List[KnapsackSolution]:
-        parents = []
-        order = random.sample(range(self.population_size), self.population_size)
-        for i in range(0, self.population_size, 2):
-            parent1 = self.population[order[i]]
-            parent2 = self.population[order[i+1]]
-            if parent1.score > parent2.score:
-                parents.append(parent1)
-            else:
-                parents.append(parent2)
+    def get_parents_for_crossover(self) -> List[KnapsackSolution]:
+        """
+        Creates a list of parents to pass on the crossover phase.
+        The parents are the top (population_size - elite_size)/2
+        (half of the segment of the  population that isn't filled with elites)
+        :return: A list of KnapsackSolution "parents"
+        """
+        sum_values = sum([chrome.score for chrome in self.population])
+        fitness_values = [chrome.score / sum_values for chrome in self.population]
+        parents = random.choices(self.population, weights=fitness_values, k=(self.population_size - self.elites_size) // 2)
 
         return parents
 
     def get_elites(self):
+        """
+        :return: the top elite_size chromosomes of the current population
+        """
         self.population.sort(reverse=True)
         return [KnapsackSolution(pop.solution_str, pop.score) for pop in self.population[:self.elites_size]]
 
     def get_crossovers(self) -> List[KnapsackSolution]:
+        """
+        Creates chromosomes for the non-elite segment of the next population
+        The process consists of:
+            1. Selecting the top (population_size - elite_size)/2 chromosomes of the current population as "parents"
+            2. Randomly selecting pairs of parents and either creating crossovers from them or
+                passing them directly to the next population
+        :return: a list of (population_size - elite_size) KnapsackSolutions
+        """
         def crossover(sol1: str, sol2: str):
+            """
+            Crosses over two KnapsackSolution items by creating two new KnapsackSolutions that
+            consist of the first half of one of the inputted solutions and the second half of the
+            second inputted solution
+            :return: two KnapsackSolution "crossover-ed" objects
+            """
             cutoff = len(sol1) // 2
             res1 = sol1[:cutoff] + sol2[cutoff:]
             res2 = sol2[:cutoff] + sol1[cutoff:]
 
             cross1 = KnapsackSolution(res1, self.problem.score_for_solution_str(res1))
-            cross2 = KnapsackSolution(res1, self.problem.score_for_solution_str(res2))
+            cross2 = KnapsackSolution(res2, self.problem.score_for_solution_str(res2))
             return [cross1, cross2]
 
         crossovers = []
-        parents = self.tournament()
+        parents = self.get_parents_for_crossover()
 
         num_crossovers = (self.population_size - self.elites_size) // 2
         for i in range(num_crossovers):
@@ -115,7 +155,18 @@ class GeneticAlgorithmAgent:
         return crossovers
 
     def mutate_solutions(self, solutions: List[KnapsackSolution]):
+        """
+        :param solutions: A list of KnapsackSolutions to mutate
+        :return: A list of mutated KnapsackSolutions
+        """
         def mutate(solution: KnapsackSolution):
+            """
+            Mutates a given solution by iterating over all items in the KnapsackProblem and with a probability of
+            inner_mutation_prob flip the decision made regarding said item in the solution
+            (take the item if not taken, remove the item if taken)
+            :param solution: A KnapsackSolution to mutate
+            :return: the mutation of the given solution
+            """
             sol_str = solution.solution_str
             for i in range(len(sol_str)):
                 if random.random() < self.inner_mutation_prob:
@@ -137,6 +188,16 @@ class GeneticAlgorithmAgent:
         return solutions
 
     def generate_next_populations(self):
+        """
+        Generates the next genetic-algorithm population.
+        The generation executed using following steps:
+            1. Get the top elite_size chromosomes of the current population
+            2. Create (population_size - elite_size) KnapsackSolutions by either crossing
+                over solutions from the current population or passing them on directly
+            3. Mutate the non-elite solution from step 2 with a certain probability
+            4. Set new population to be elites + mutated non-elites
+        :return:
+        """
         elites = self.get_elites()
         crossovers = self.get_crossovers()
         mutations = self.mutate_solutions(crossovers)
@@ -152,15 +213,15 @@ class GeneticAlgorithmAgent:
 
 def genetic_search(filepath):
     problem = KnapsackGeneticProblem(filepath)
-    population_size = 500
     agent = GeneticAlgorithmAgent(
         problem=problem,
-        population_size=2*problem.num_items,
-        number_iterations=problem.num_items,
+        population_size_factor=2,
+        number_iterations_factor=1,
         elitism_fraction=0.35,
         cross_prob=0.7,
         mutation_prob=1,
-        inner_mutation_prob=1 / len(problem)
+        inner_mutation_prob=0,
+        expected_items_mutated=1
     )
 
     return agent.run()
