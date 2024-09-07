@@ -98,13 +98,12 @@ class GeneticAlgorithmAgent:
     def get_parents_for_crossover(self) -> List[KnapsackSolution]:
         """
         Creates a list of parents to pass on the crossover phase.
-        The parents are the top (population_size - elite_size)/2
-        (half of the segment of the  population that isn't filled with elites)
+        The parents are the top (population_size - elite_size) chromosomes in the current population
         :return: A list of KnapsackSolution "parents"
         """
         sum_values = sum([chrome.score for chrome in self.population])
         fitness_values = [chrome.score / sum_values for chrome in self.population]
-        parents = random.choices(self.population, weights=fitness_values, k=(self.population_size - self.elites_size) // 2)
+        parents = random.choices(self.population, weights=fitness_values, k=self.population_size - self.elites_size)
 
         return parents
 
@@ -120,7 +119,7 @@ class GeneticAlgorithmAgent:
         Creates chromosomes for the non-elite segment of the next population
         The process consists of:
             1. Selecting the top (population_size - elite_size)/2 chromosomes of the current population as "parents"
-            2. Randomly selecting pairs of parents and either creating crossovers from them or
+            2. Taking pairs of parents and either creating crossovers from them or
                 passing them directly to the next population
         :return: a list of (population_size - elite_size) KnapsackSolutions
         """
@@ -142,10 +141,8 @@ class GeneticAlgorithmAgent:
         crossovers = []
         parents = self.get_parents_for_crossover()
 
-        num_crossovers = (self.population_size - self.elites_size) // 2
-        for i in range(num_crossovers):
-            indexes = random.sample(range(len(parents)), 2)
-            parent1, parent2 = parents[indexes[0]], parents[indexes[1]]
+        for i in range(len(parents)//2):
+            parent1, parent2 = parents[2*i], parents[2*i+1]
 
             if random.random() < self.cross_prob:
                 crossovers += crossover(parent1.solution_str, parent2.solution_str)
