@@ -62,7 +62,9 @@ class GeneticAlgorithmAgent:
                  cross_prob=0.7,
                  mutation_prob=1,
                  inner_mutation_prob=0.05,
-                 expected_items_mutated=1):
+                 expected_items_mutated=1,
+                 cross_method="halfway",
+                 random_init=False):
         """
         :param problem: A KnapsackGeneticProblem instance
         :param population_size_factor: The population size will be population_size_factor * len(problem)
@@ -75,14 +77,17 @@ class GeneticAlgorithmAgent:
                         Inner mutation probability will be expected_items_mutated/len(problem)
         """
         self.problem: KnapsackGeneticProblem = problem
-        self.population_size = population_size_factor*len(problem)
-        self.number_iterations = number_iterations_factor*len(problem)
+        self.population_size = int(population_size_factor*len(problem))
+        self.number_iterations = int(number_iterations_factor*len(problem))
         self.cross_prob = cross_prob
         self.mutation_prob = mutation_prob
         self.inner_mutation_prob = inner_mutation_prob \
             if expected_items_mutated <= 0 \
             else expected_items_mutated / len(problem)
         self.elites_size = int(self.population_size * elitism_fraction) & ~1
+        self.random_init = random_init
+        self.crossover_method = cross_method
+
         self.population: List[KnapsackSolution] = self.generate_first_population()
 
     def generate_first_population(self):
@@ -91,8 +96,28 @@ class GeneticAlgorithmAgent:
         The population consists of solutions that are constructed of a single item in the knapsack
         :return: A list of KnapsackSolution items representing the first population
         """
-        pop = ['0'*(i%self.problem.num_items)+'1'+'0'*(self.problem.num_items-(i%self.problem.num_items)-1) for i in range(self.population_size)]
+        if self.random_init:
+            pop = self.generate_random_generation()
+        else:
+            pop = ['0'*(i%self.problem.num_items)+'1'+'0'*(self.problem.num_items-(i%self.problem.num_items)-1) for i in range(self.population_size)]
         return [KnapsackSolution(solution_str, self.problem.score_for_solution_str(solution_str)) for solution_str in pop]
+
+    def generate_random_generation(self):
+        pop = []
+        tried = set()
+        max_iters = 1000
+        while len(pop) < self.population_size:
+            iter = 0
+            chrome = ''
+            score = 0
+            while score == 0:
+                chrome = ''.join(random.choices(['0', '1'], k=self.problem.num_items))
+                score = self.problem.score_for_solution_str(chrome)
+                if chrome not in tried:
+                    tried.add(chrome)
+                    iter += 1
+            pop.append(chrome)
+        return pop
 
     def get_parents_for_crossover(self) -> List[KnapsackSolution]:
         """
@@ -101,7 +126,10 @@ class GeneticAlgorithmAgent:
         :return: A list of KnapsackSolution "parents"
         """
         sum_values = sum([chrome.score for chrome in self.population])
-        fitness_values = [chrome.score / sum_values for chrome in self.population]
+        if sum_values == 0:
+            fitness_values = [1]*len(self.population)
+        else:
+            fitness_values = [chrome.score / sum_values for chrome in self.population]
         parents = random.choices(self.population, weights=fitness_values, k=self.population_size - self.elites_size)
 
         return parents
@@ -122,17 +150,33 @@ class GeneticAlgorithmAgent:
                 passing them directly to the next population
         :return: A list of (population_size - elite_size) KnapsackSolutions
         """
-        def crossover(sol1: str, sol2: str):
+        def crossover(sol1: KnapsackSolution, sol2: KnapsackSolution):
             """
             Crosses over two KnapsackSolution items by creating two new KnapsackSolutions that
             consist of the first half of one of the inputted solutions and the second half of the
             second inputted solution
             :return: Two KnapsackSolution "crossover-ed" objects
             """
-            cutoff = len(sol1) // 2
-            res1 = sol1[:cutoff] + sol2[cutoff:]
-            res2 = sol2[:cutoff] + sol1[cutoff:]
-
+            sol1_str = sol1.solution_str
+            sol2_str = sol2.solution_str
+            if self.crossover_method == "halfway":
+                cutoff = len(sol1_str) // 2
+                res1 = sol1_str[:cutoff] + sol2_str[cutoff:]
+                res2 = sol2_str[:cutoff] + sol1_str[cutoff:]
+            if self.crossover_method == "random":
+                if len(sol1_str) <= 3:
+                    cutoff = random.randint(0, len(sol1_str) - 1)
+                else:
+                    cutoff = random.randint(1, len(sol1_str) - 2)
+                res1 = sol1_str[:cutoff] + sol2_str[cutoff:]
+                res2 = sol2_str[:cutoff] + sol1_str[cutoff:]
+            if self.crossover_method == "score based":
+                max_sol, min_sol = (sol1,sol2) if sol1.score > sol2.score else (sol2,sol1)
+                ratio = max_sol.score / (max_sol.score + min_sol.score)
+                max_cutoff = int(ratio * len(sol1_str))
+                min_cutoff = int((1-ratio) * len(sol1_str))
+                res1 = max_sol.solution_str[:max_cutoff] + min_sol.solution_str[max_cutoff:]
+                res2 = min_sol.solution_str[:min_cutoff] + max_sol.solution_str[min_cutoff:]
             cross1 = KnapsackSolution(res1, self.problem.score_for_solution_str(res1))
             cross2 = KnapsackSolution(res2, self.problem.score_for_solution_str(res2))
             return [cross1, cross2]
@@ -144,7 +188,7 @@ class GeneticAlgorithmAgent:
             parent1, parent2 = parents[2*i], parents[2*i+1]
 
             if random.random() < self.cross_prob:
-                crossovers += crossover(parent1.solution_str, parent2.solution_str)
+                crossovers += crossover(parent1, parent2)
             else:
                 crossovers += [parent1, parent2]
 
@@ -221,13 +265,15 @@ def genetic_search(filepath):
     problem = KnapsackGeneticProblem(filepath)
     agent = GeneticAlgorithmAgent(
         problem=problem,
-        population_size_factor=2,
-        number_iterations_factor=1,
+        population_size_factor=1,
+        number_iterations_factor=2,
         elitism_fraction=0.35,
         cross_prob=0.7,
         mutation_prob=1,
         inner_mutation_prob=0,
-        expected_items_mutated=1
+        expected_items_mutated=1,
+        cross_method="halfway",
+        random_init=False
     )
 
     return agent.run()
