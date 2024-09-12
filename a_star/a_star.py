@@ -3,8 +3,11 @@ import sys
 import argparse
 from datetime import datetime
 from shared.structures import KnapsackProblem
-from a_star.search import PriorityQueue, priority_func
 from shared.utils import milliseconds
+if __name__ == "__main__":
+    from search import PriorityQueue, priority_func
+else:
+    from a_star.search import PriorityQueue, priority_func
 
 def a_star_search(problem):
     """

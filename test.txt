@@ -1,2 +1,0 @@
-population size,number iterations,elitism fraction,crossover probability,mutation probability,inner mutation probability,score,weight
-1000,1000,0.35,0.7,1,0.05,7582.0,988.0
