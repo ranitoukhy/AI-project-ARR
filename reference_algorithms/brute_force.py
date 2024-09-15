@@ -51,7 +51,7 @@ def main(args):
     return max_value
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='A* search for finiding a solution to the Knapsack problem')
+    parser = argparse.ArgumentParser(description='Brute force approach for finiding a solution to the Knapsack problem')
 
     parser.add_argument('-i', '--input', required=True, help='Input Knapsack problem file path.')
     parser.add_argument('-t', '--time', action='store_true', help='Time of the run will be printed.')
